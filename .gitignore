@@ -1,6 +1,7 @@
 .cursorignore
 .cursorrules
-.github/
+.github/instructions
+.github/guidelines.md
 .cursor/
 .junie/
 .clinerules/
