@@ -1,9 +1,6 @@
 package syncai
 
 import (
-	"fmt"
-	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"syncai/internal/config"
@@ -41,18 +38,4 @@ func (s *SyncAI) generatePath(agent *config.Agent, kind Kind, stem string) strin
 	default:
 		return ""
 	}
-}
-
-func readFile(path string) ([]byte, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("open source: %w", err)
-	}
-	defer f.Close()
-	data, err := io.ReadAll(f)
-	if err != nil {
-		return nil, fmt.Errorf("read source: %w", err)
-	}
-
-	return data, nil
 }

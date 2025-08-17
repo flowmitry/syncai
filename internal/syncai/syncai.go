@@ -160,7 +160,7 @@ func (s *SyncAI) Identify(path string) (*config.Agent, Kind, string) {
 }
 
 func (s *SyncAI) syncRule(srcAgent, srcPath, dstAgent, dstPath string) error {
-	content, err := readFile(srcPath)
+	content, err := util.ReadFile(srcPath)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func (s *SyncAI) syncRule(srcAgent, srcPath, dstAgent, dstPath string) error {
 }
 
 func (s *SyncAI) syncContext(srcAgent, srcPath, dstAgent, dstPath string) error {
-	content, err := readFile(srcPath)
+	content, err := util.ReadFile(srcPath)
 	if err != nil {
 		return err
 	}
@@ -190,7 +190,7 @@ func (s *SyncAI) syncContext(srcAgent, srcPath, dstAgent, dstPath string) error 
 }
 
 func (s *SyncAI) syncIgnore(srcAgent, srcPath, dstAgent, dstPath string) error {
-	content, err := readFile(srcPath)
+	content, err := util.ReadFile(srcPath)
 	if err != nil {
 		return err
 	}

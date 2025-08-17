@@ -42,3 +42,17 @@ func FileHash(path string) (string, error) {
 	sum := h.Sum(nil)
 	return hex.EncodeToString(sum), nil
 }
+
+func ReadFile(path string) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("open source: %w", err)
+	}
+	defer f.Close()
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("read source: %w", err)
+	}
+
+	return data, nil
+}
