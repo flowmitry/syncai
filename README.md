@@ -37,54 +37,30 @@ go run .
 
 ## Configuration format
 
-The default configuration is a simple JSON map:
+The default configuration is a simple JSON map (for more details check [syncai.json](syncai.json)):
 
 ```json
 {
   "config": {
+    // sync interval in seconds
     "interval": 5
   },
   "agents": [
     {
-      "name": "cursor",
+      // agent name
+      "name": "<AGENT_NAME>",
+      // optional "rules" section
+      // GitHub Copilot calls it "instructions", Cursor and Cline "rules"
       "rules": {
-        "pattern": ".cursor/rules/*.mdc"
+        "pattern": ".<AGENT>/rules/*.md"
       },
+      // optional "guidelines" section
       "guidelines": {
-        "path": ".cursorrules"
+        "path": "/path/to/your/guidelines.md"
       },
+      // optional "ignore" section
       "ignore": {
-        "path": ".cursorignore"
-      }
-    },
-    {
-      "name": "copilot",
-      "rules": {
-        "pattern": ".github/instructions/*.instruction.md"
-      },
-      "guidelines": {
-        "path": ".github/guidelines.md"
-      }
-    },
-    {
-      "name": "cline",
-      "rules": {
-        "pattern": ".clinerules/*.md"
-      }
-    },
-    {
-      "name": "claude",
-      "guidelines": {
-        "path": "CLAUDE.md"
-      }
-    },
-    {
-      "name": "junie",
-      "guidelines": {
-        "path": ".junie/guidelines.md"
-      },
-      "ignore": {
-        "path": ".aiignore"
+        "path": "/path/to/your/ignorefile"
       }
     }
   ]
