@@ -1,0 +1,9 @@
+.cursorignore
+.cursorrules
+.github/
+.cursor/
+.junie/
+.clinerules/
+bin
+.idea
+.DS_Store

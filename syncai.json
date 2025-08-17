@@ -1,0 +1,43 @@
+{
+  "config": {
+    "interval": 5
+  },
+  "agents": [
+    {
+      "name": "cursor",
+      "rules": {
+        "pattern": ".cursor/rules/*.mdc"
+      },
+      "guidelines": {
+        "path": ".cursorrules"
+      },
+      "ignore": {
+        "path": ".cursorignore"
+      }
+    },
+    {
+      "name": "copilot",
+      "rules": {
+        "pattern": ".github/instructions/*.instruction.md"
+      },
+      "guidelines": {
+        "path": ".github/guidelines.md"
+      }
+    },
+    {
+      "name": "cline",
+      "rules": {
+        "pattern": ".clinerules/*.md"
+      }
+    },
+    {
+      "name": "junie",
+      "guidelines": {
+        "path": ".junie/guidelines.md"
+      },
+      "ignore": {
+        "path": ".aiignore"
+      }
+    }
+  ]
+}
