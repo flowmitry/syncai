@@ -19,9 +19,16 @@ import (
 func main() {
 	var cfgPath string
 	var doSelfUpdate bool
+	var showVersion bool
 	flag.StringVar(&cfgPath, "config", "syncai.json", "path to configuration file")
 	flag.BoolVar(&doSelfUpdate, "self-update", false, "update SyncAI to the latest released version")
+	flag.BoolVar(&showVersion, "version", false, "print version and exit")
 	flag.Parse()
+
+	if showVersion {
+		fmt.Println(version.Version())
+		return
+	}
 
 	if doSelfUpdate {
 		if err := selfupdate.Run(); err != nil {
