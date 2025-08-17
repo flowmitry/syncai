@@ -11,7 +11,7 @@ It watches the files you specify in a JSON configuration and propagates every ch
 
 ## Quick start
 
-1. Download a suitable binary from the [GitHub Releases](/releases)
+1. Download a suitable binary from the [GitHub Releases](https://github.com/flowmitry/syncai/releases)
 2. Copy [syncai.json](syncai.json) to your project
 3. Launch the binary in the project dir or with an argument `./syncai -config {path_to_syncai.json}`
 
