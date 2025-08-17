@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	owner = "flowmitry"
-	repo  = "syncai"
+	release_url = "https://api.github.com/repos/flowmitry/syncai/releases/latest"
 )
 
 type releaseAsset struct {
@@ -69,6 +68,8 @@ func Run() error {
 	if goos != "windows" {
 		_ = os.Chmod(tmpBin, 0o755)
 	}
+	// Ensure temporary file is cleaned up
+	defer os.Remove(tmpBin)
 
 	// Replace current executable
 	curExe, err := os.Executable()
@@ -93,25 +94,38 @@ func Run() error {
 		return nil
 	}
 
-	// Unix: move into place atomically by renaming after creating temp in same dir
+	// Unix: attempt atomic replace in place; if permission denied, fall back to saving in temp and instruct user.
 	targetDir := filepath.Dir(curExe)
 	finalTmp := filepath.Join(targetDir, ".syncai-update.tmp")
 	if err := copyFile(tmpBin, finalTmp); err != nil {
-		return fmt.Errorf("prepare updated binary: %w", err)
+		// Fallback: cannot write into install dir (likely permission denied). Save in temp and instruct user.
+		fallbackPath := filepath.Join(os.TempDir(), filepath.Base(curExe)+".new")
+		_ = os.Remove(fallbackPath)
+		if copyErr := copyFile(tmpBin, fallbackPath); copyErr != nil {
+			return fmt.Errorf("prepare updated binary: %v; fallback failed: %v", err, copyErr)
+		}
+		_ = os.Chmod(fallbackPath, 0o755)
+		return fmt.Errorf("updated binary saved to %s; install it with: sudo mv %s %s", fallbackPath, fallbackPath, curExe)
 	}
 	if err := os.Chmod(finalTmp, 0o755); err != nil {
 		return fmt.Errorf("chmod: %w", err)
 	}
 	if err := os.Rename(finalTmp, curExe); err != nil {
 		_ = os.Remove(finalTmp)
-		return fmt.Errorf("replace executable: %w", err)
+		// Fallback on rename failure (e.g., permissions): save to temp and instruct user.
+		fallbackPath := filepath.Join(os.TempDir(), filepath.Base(curExe)+".new")
+		_ = os.Remove(fallbackPath)
+		if copyErr := copyFile(tmpBin, fallbackPath); copyErr != nil {
+			return fmt.Errorf("replace executable: %v; fallback failed: %v", err, copyErr)
+		}
+		_ = os.Chmod(fallbackPath, 0o755)
+		return fmt.Errorf("updated binary saved to %s; install it with: sudo mv %s %s", fallbackPath, fallbackPath, curExe)
 	}
 	return nil
 }
 
 func fetchLatestRelease() (*releaseResponse, error) {
-	api := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", owner, repo)
-	req, err := http.NewRequest("GET", api, nil)
+	req, err := http.NewRequest("GET", release_url, nil)
 	if err != nil {
 		return nil, err
 	}
