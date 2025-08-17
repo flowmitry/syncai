@@ -74,9 +74,6 @@ The default configuration is a simple JSON map:
     },
     {
       "name": "claude",
-      "rules": {
-        "pattern": ".clinerules/*.md"
-      },
       "guidelines": {
         "path": "CLAUDE.md"
       }
