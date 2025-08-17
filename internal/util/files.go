@@ -44,15 +44,9 @@ func FileHash(path string) (string, error) {
 }
 
 func ReadFile(path string) ([]byte, error) {
-	f, err := os.Open(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("open source: %w", err)
+		return nil, fmt.Errorf("open file error: %w", err)
 	}
-	defer f.Close()
-	data, err := io.ReadAll(f)
-	if err != nil {
-		return nil, fmt.Errorf("read source: %w", err)
-	}
-
-	return data, nil
+	return b, nil
 }
