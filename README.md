@@ -6,7 +6,8 @@
 
 ---
 
-**SyncAI** is a lightweight utility that keeps AI-assistant guidelines, rules and ignored files in sync across multiple agents:
+**SyncAI** is a lightweight utility that keeps AI-assistant guidelines, rules and ignored files in sync across multiple
+agents:
 
 * Cursor
 * GitHub Copilot
@@ -14,14 +15,14 @@
 * Cline
 * Claude Code
 
-It watches the files you specify in a JSON configuration and propagates every change to the corresponding locations for the other agents.
+It watches the files you specify in a JSON configuration and propagates every change to the corresponding locations for
+the other agents.
 
 ## Quick start
 
 1. Download a suitable binary from the [GitHub Releases](https://github.com/flowmitry/syncai/releases)
 2. Copy [syncai.json](syncai.json) to your project and leave configuration for your agents
 3. Launch the binary in the project dir or with an argument `./syncai -config {path_to_syncai.json}`
-
 
 To build SyncAI manually, follow the next steps:
 
@@ -71,7 +72,8 @@ The default configuration is a simple JSON map (for more details check [syncai.j
 
 The copying logic is intentionally simple and conservative:
 
-* The filename is preserved exactly, unless the target pattern contains a `*` wildcard—in that case, the wildcard is replaced with the source file’s base name.
+* The filename is preserved exactly, unless the target pattern contains a `*` wildcard—in that case, the wildcard is
+  replaced with the source file’s base name.
 * Destination directories are created as needed.
 
 ## How to update

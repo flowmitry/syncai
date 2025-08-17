@@ -103,13 +103,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        goos: [linux, darwin, windows]
-        goarch: [amd64, arm64]
+        goos: [ linux, darwin, windows ]
+        goarch: [ amd64, arm64 ]
         exclude:
           # Windows/arm64 cross-compile is supported, but exclude if not desired
           # - goos: windows
           #   goarch: arm64
-          []
+          [ ]
     steps:
       - name: Checkout tagged ref
         uses: actions/checkout@v4
@@ -142,7 +142,7 @@ jobs:
 
   release:
     name: Create GitHub Release and upload assets
-    needs: [tag, build]
+    needs: [ tag, build ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout tagged ref

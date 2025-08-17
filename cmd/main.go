@@ -56,10 +56,10 @@ func main() {
 
 	filesState := buildFilesState(cfg)
 	scan := func() {
-		newState := make(map[string]time.Time)
+		newState := make(map[string]string)
 		for _, agent := range cfg.Agents {
 			for _, path := range agent.Files() {
-				fi, err := os.Stat(path)
+				_, err := os.Stat(path)
 				if err != nil {
 					if os.IsNotExist(err) {
 						// File may not exist yet; silently ignore
@@ -68,9 +68,8 @@ func main() {
 					log.Printf("file error %s: %v", path, err)
 					continue
 				}
-				modT := fi.ModTime()
 				hash, _ := util.FileHash(path)
-				newState[path] = modT
+				newState[path] = hash
 				prev, ok := filesState[path]
 				if !ok || hash != prev {
 					if ok {
