@@ -4,13 +4,101 @@ permissions:
   contents: write
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Optional semver (e.g., 1.2.3 or v1.2.3). If omitted, the patch of the latest tag will be bumped."
+        required: false
+        type: string
 
 jobs:
+  tag:
+    name: Determine and create tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.vars.outputs.new_tag }}
+    steps:
+      - name: Checkout repository (with tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Configure Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "1319595+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine new tag
+        id: vars
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+
+          semver_regex='^v?[0-9]+\.[0-9]+\.[0-9]+$'
+
+          if [[ -n "$INPUT_VERSION" ]]; then
+            if [[ ! "$INPUT_VERSION" =~ $semver_regex ]]; then
+              echo "Provided version '$INPUT_VERSION' is not a valid semver (expected 1.2.3 or v1.2.3)." >&2
+              exit 1
+            fi
+            # Normalize to 'v' prefix
+            if [[ "$INPUT_VERSION" == v* ]]; then
+              NEW_TAG="$INPUT_VERSION"
+            else
+              NEW_TAG="v$INPUT_VERSION"
+            fi
+          else
+            # Get latest tag (if any)
+            LATEST_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+
+            if [[ -z "$LATEST_TAG" ]]; then
+              # Start from 0.0.1 when no tags exist
+              NEW_TAG="v0.0.1"
+            else
+              # Preserve optional 'v' prefix
+              PREFIX=""
+              CORE="$LATEST_TAG"
+              if [[ "$LATEST_TAG" == v* ]]; then
+                PREFIX="v"
+                CORE="${LATEST_TAG#v}"
+              fi
+
+              IFS='.' read -r MAJOR MINOR PATCH <<< "$CORE"
+
+              # Basic validation to ensure we parsed numbers
+              if [[ -z "$MAJOR" || -z "$MINOR" || -z "$PATCH" ]]; then
+                echo "Latest tag '$LATEST_TAG' is not in expected semver format." >&2
+                exit 1
+              fi
+
+              PATCH=$((PATCH + 1))
+              NEW_TAG="${PREFIX}${MAJOR}.${MINOR}.${PATCH}"
+            fi
+          fi
+
+          echo "Computed new tag: $NEW_TAG"
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create annotated tag
+        run: |
+          TAG="${{ steps.vars.outputs.new_tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag '$TAG' already exists. Nothing to do." >&2
+            exit 1
+          fi
+          git tag -a "$TAG" -m "Release $TAG"
+
+      - name: Push tag
+        run: |
+          TAG="${{ steps.vars.outputs.new_tag }}"
+          git push origin "$TAG"
+
   build:
     name: Build binaries (${{ matrix.goos }}-${{ matrix.goarch }})
+    needs: tag
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -23,9 +111,11 @@ jobs:
           #   goarch: arm64
           []
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout tagged ref
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ needs.tag.outputs.tag_name }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -68,12 +158,14 @@ jobs:
 
   release:
     name: Create GitHub Release and upload assets
-    needs: build
+    needs: [tag, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout tagged ref
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ needs.tag.outputs.tag_name }}
 
       - name: Set node
         uses: actions/setup-node@v4
@@ -96,7 +188,7 @@ jobs:
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ needs.tag.outputs.tag_name }}
           files: |
             dist/*.tar.gz
             dist/*.zip
