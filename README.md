@@ -12,6 +12,7 @@
 * GitHub Copilot
 * JetBrains Junie
 * Cline
+* Claude Code
 
 It watches the files you specify in a JSON configuration and propagates every change to the corresponding locations for the other agents.
 
@@ -69,6 +70,15 @@ The default configuration is a simple JSON map:
       "name": "cline",
       "rules": {
         "pattern": ".clinerules/*.md"
+      }
+    },
+    {
+      "name": "claude",
+      "rules": {
+        "pattern": ".clinerules/*.md"
+      },
+      "guidelines": {
+        "path": "CLAUDE.md"
       }
     },
     {

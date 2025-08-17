@@ -31,6 +31,15 @@
       }
     },
     {
+      "name": "claude",
+      "rules": {
+        "pattern": ".clinerules/*.md"
+      },
+      "guidelines": {
+        "path": "CLAUDE.md"
+      }
+    },
+    {
       "name": "junie",
       "guidelines": {
         "path": ".junie/guidelines.md"
