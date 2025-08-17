@@ -2,23 +2,22 @@ package syncai
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"syncai/internal/util"
 
 	"syncai/internal/config"
-	"syncai/internal/util"
 )
 
 type Kind string
 
 const (
-	KindUnknown    Kind = ""
-	KindRules      Kind = "rules"
-	KindGuidelines Kind = "guidelines"
-	KindIgnore     Kind = "ignore"
+	KindUnknown Kind = ""
+	KindRules   Kind = "rules"
+	KindContext Kind = "context"
+	KindIgnore  Kind = "ignore"
 )
 
 type SyncAI struct {
@@ -30,30 +29,41 @@ func New(cfg config.Config) *SyncAI {
 }
 
 // Delete propagates deletion of a watched file to corresponding destinations across other agents.
-func (s *SyncAI) Delete(path string) error {
+func (s *SyncAI) Delete(path string) ([]string, error) {
+	result := make([]string, 0)
 	srcAgent, kind, stem := s.Identify(path)
+	result = append(result, path)
 	if kind == KindUnknown || srcAgent == nil {
-		return nil // nothing to do
+		return result, nil // nothing to do
 	}
+
+	// Only propagate deletions for rules. Context/ignore deletions are not propagated to avoid accidental removals.
+	if kind != KindRules {
+		return result, nil
+	}
+
 	for i := range s.cfg.Agents {
 		dstAgent := &s.cfg.Agents[i]
 		if srcAgent.Name == dstAgent.Name {
 			continue
 		}
 
-		dstPath := s.GeneratePath(dstAgent, kind, stem)
+		dstPath := s.generatePath(dstAgent, kind, stem)
 		if dstPath == "" {
 			continue
 		}
 		if err := os.Remove(dstPath); err != nil {
 			if os.IsNotExist(err) {
 				// Already gone at the destination; nothing to do
+				result = append(result, dstPath)
 				continue
 			}
-			return err
+			return result, err
+		} else {
+			result = append(result, dstPath)
 		}
 	}
-	return nil
+	return result, nil
 }
 
 // Sync propagates creation/update of a watched file across other agents.
@@ -64,33 +74,38 @@ func (s *SyncAI) Sync(path string) ([]string, error) {
 		return result, nil // unknown file, ignore
 	}
 
-	// Read source content once
-	f, err := os.Open(path)
-	if err != nil {
-		return result, fmt.Errorf("open source: %w", err)
-	}
-	defer f.Close()
-	data, err := io.ReadAll(f)
-	if err != nil {
-		return result, fmt.Errorf("read source: %w", err)
-	}
-
 	for i := range s.cfg.Agents {
 		dstAgent := &s.cfg.Agents[i]
 		if dstAgent.Name == srcAgent.Name {
 			continue
 		}
 
-		dstPath := s.GeneratePath(dstAgent, kind, stem)
+		dstPath := s.generatePath(dstAgent, kind, stem)
 		if dstPath == "" {
 			continue
 		}
-		if err := util.EnsureDir(filepath.Dir(dstPath)); err != nil {
-			return result, err
+
+		switch kind {
+		case KindRules:
+			err := s.syncRule(srcAgent.Name, path, dstAgent.Name, dstPath)
+			if err != nil {
+				return result, fmt.Errorf("sync rule: %w", err)
+			}
+			result = append(result, dstPath)
+		case KindContext:
+			err := s.syncContext(srcAgent.Name, path, dstAgent.Name, dstPath)
+			if err != nil {
+				return result, fmt.Errorf("sync context: %w", err)
+			}
+			result = append(result, dstPath)
+		case KindIgnore:
+			err := s.syncIgnore(srcAgent.Name, path, dstAgent.Name, dstPath)
+			if err != nil {
+				return result, fmt.Errorf("sync ignore: %w", err)
+			}
+			result = append(result, dstPath)
 		}
-		if err := util.WriteIfChanged(dstPath, data); err != nil {
-			return result, fmt.Errorf("write %s: %w", dstPath, err)
-		}
+
 		result = append(result, dstPath)
 		log.Printf("File %s synced to %s", path, dstPath)
 	}
@@ -102,8 +117,8 @@ func (s *SyncAI) Identify(path string) (*config.Agent, Kind, string) {
 	clean := filepath.Clean(path)
 	for i := range s.cfg.Agents {
 		a := &s.cfg.Agents[i]
-		if filepath.Clean(a.Guidelines.Path) == clean {
-			return a, KindGuidelines, ""
+		if filepath.Clean(a.Context.Path) == clean {
+			return a, KindContext, ""
 		}
 		if filepath.Clean(a.Ignore.Path) == clean {
 			return a, KindIgnore, ""
@@ -144,36 +159,47 @@ func (s *SyncAI) Identify(path string) (*config.Agent, Kind, string) {
 	return nil, KindUnknown, ""
 }
 
-func (s *SyncAI) GeneratePath(agent *config.Agent, kind Kind, stem string) string {
-	if agent == nil {
-		return ""
+func (s *SyncAI) syncRule(srcAgent, srcPath, dstAgent, dstPath string) error {
+	content, err := readFile(srcPath)
+	if err != nil {
+		return err
 	}
-	switch kind {
-	case KindGuidelines:
-		return agent.Guidelines.Path
-	case KindIgnore:
-		return agent.Ignore.Path
-	case KindRules:
-		pattern := strings.TrimSpace(agent.Rules.Pattern)
-		if pattern == "" {
-			return ""
-		}
-		dir := filepath.Dir(pattern)
-		base := filepath.Base(pattern)
-		var filename string
-		if strings.Contains(base, "*") {
-			filename = strings.ReplaceAll(base, "*", stem)
-		} else {
-			// No wildcard in base, just use stem with the same extension as the pattern base
-			ext := filepath.Ext(base)
-			if ext == "" {
-				filename = stem
-			} else {
-				filename = stem + ext
-			}
-		}
-		return filepath.Join(dir, filename)
-	default:
-		return ""
+	if err := util.EnsureDir(filepath.Dir(dstPath)); err != nil {
+		return err
 	}
+	if err := util.WriteIfChanged(dstPath, content); err != nil {
+		return fmt.Errorf("write %s: %w", dstPath, err)
+	}
+
+	return nil
+}
+
+func (s *SyncAI) syncContext(srcAgent, srcPath, dstAgent, dstPath string) error {
+	content, err := readFile(srcPath)
+	if err != nil {
+		return err
+	}
+	if err := util.EnsureDir(filepath.Dir(dstPath)); err != nil {
+		return err
+	}
+	if err := util.WriteIfChanged(dstPath, content); err != nil {
+		return fmt.Errorf("write %s: %w", dstPath, err)
+	}
+
+	return nil
+}
+
+func (s *SyncAI) syncIgnore(srcAgent, srcPath, dstAgent, dstPath string) error {
+	content, err := readFile(srcPath)
+	if err != nil {
+		return err
+	}
+	if err := util.EnsureDir(filepath.Dir(dstPath)); err != nil {
+		return err
+	}
+	if err := util.WriteIfChanged(dstPath, content); err != nil {
+		return fmt.Errorf("write %s: %w", dstPath, err)
+	}
+
+	return nil
 }

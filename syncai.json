@@ -8,7 +8,7 @@
       "rules": {
         "pattern": ".cursor/rules/*.mdc"
       },
-      "guidelines": {
+      "context": {
         "path": ".cursorrules"
       },
       "ignore": {
@@ -20,7 +20,7 @@
       "rules": {
         "pattern": ".github/instructions/*.instruction.md"
       },
-      "guidelines": {
+      "context": {
         "path": ".github/guidelines.md"
       }
     },
@@ -32,13 +32,13 @@
     },
     {
       "name": "claude",
-      "guidelines": {
+      "context": {
         "path": "CLAUDE.md"
       }
     },
     {
       "name": "junie",
-      "guidelines": {
+      "context": {
         "path": ".junie/guidelines.md"
       },
       "ignore": {

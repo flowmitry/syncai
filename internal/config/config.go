@@ -15,12 +15,12 @@ type Rules struct {
 	Pattern string `json:"pattern"`
 }
 
-type Guidelines struct {
+type Context struct {
 	Path string `json:"path"`
 }
 
-func (g Guidelines) Index() string {
-	return "Guidelines"
+func (c Context) Index() string {
+	return "Context"
 }
 
 type Ignore struct {
@@ -28,10 +28,10 @@ type Ignore struct {
 }
 
 type Agent struct {
-	Name       string     `json:"name"`
-	Rules      Rules      `json:"rules"`
-	Guidelines Guidelines `json:"guidelines"`
-	Ignore     Ignore     `json:"ignore"`
+	Name    string  `json:"name"`
+	Rules   Rules   `json:"rules"`
+	Context Context `json:"context"`
+	Ignore  Ignore  `json:"ignore"`
 }
 
 type Meta struct {
@@ -70,8 +70,8 @@ func Load(path string) (Config, error) {
 func (a Agent) Files() []string {
 	files := make([]string, 0, 8)
 
-	// Include guidelines if configured
-	if p := strings.TrimSpace(a.Guidelines.Path); p != "" {
+	// Include context if configured
+	if p := strings.TrimSpace(a.Context.Path); p != "" {
 		files = append(files, p)
 	}
 

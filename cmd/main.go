@@ -84,11 +84,13 @@ func main() {
 		}
 		for path := range filesState {
 			if _, ok := newState[path]; !ok {
-				if err := sync.Delete(path); err != nil {
+				deletedPaths, err := sync.Delete(path)
+				for _, deletedPath := range deletedPaths {
+					log.Printf("Deleted missing file across agents: %s", deletedPath)
+					delete(filesState, deletedPath)
+				}
+				if err != nil {
 					log.Printf("delete error: %v", err)
-				} else {
-					log.Printf("Deleted missing file across agents: %s", path)
-					delete(filesState, path)
 				}
 			}
 		}

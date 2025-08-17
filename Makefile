@@ -14,6 +14,7 @@ all: build
 # Build the binary into ./bin/syncai from the cmd entrypoint
 build:
 	@mkdir -p $(BUILD_DIR)
+	$(GO) mod tidy
 	$(GO) build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd
 
 # Run the application with the default configuration file (syncai.json)

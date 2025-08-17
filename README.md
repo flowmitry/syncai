@@ -54,8 +54,8 @@ The default configuration is a simple JSON map (for more details check [syncai.j
       "rules": {
         "pattern": ".<AGENT>/rules/*.md"
       },
-      // optional "guidelines" section
-      "guidelines": {
+      // optional "context" section
+      "context": {
         "path": "/path/to/your/guidelines.md"
       },
       // optional "ignore" section
