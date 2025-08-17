@@ -132,28 +132,11 @@ jobs:
           if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
           CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags "-s -w" -o "$OUT_DIR/${BIN_NAME}_${{ matrix.goos }}_${{ matrix.goarch }}$EXT" ./cmd
 
-      - name: Archive
-        run: |
-          set -euo pipefail
-          OUT_DIR=dist
-          FILE_BASE=syncai_${{ matrix.goos }}_${{ matrix.goarch }}
-          # Copy default config into dist so it can be included into archives
-          cp syncai.json "$OUT_DIR/"
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            # Include both the binary and the config file
-            zip -j "$OUT_DIR/${FILE_BASE}.zip" "$OUT_DIR/${FILE_BASE}.exe" "$OUT_DIR/syncai.json"
-            echo "ARCHIVE_PATH=$OUT_DIR/${FILE_BASE}.zip" >> $GITHUB_ENV
-          else
-            # Include both the binary and the config file
-            tar -C "$OUT_DIR" -czf "$OUT_DIR/${FILE_BASE}.tar.gz" "${FILE_BASE}" "syncai.json"
-            echo "ARCHIVE_PATH=$OUT_DIR/${FILE_BASE}.tar.gz" >> $GITHUB_ENV
-          fi
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: syncai_${{ matrix.goos }}_${{ matrix.goarch }}
-          path: ${{ env.ARCHIVE_PATH }}
+          path: dist/syncai_${{ matrix.goos }}_${{ matrix.goarch }}*
           if-no-files-found: error
 
   release:
@@ -190,8 +173,7 @@ jobs:
         with:
           tag_name: ${{ needs.tag.outputs.tag_name }}
           files: |
-            dist/*.tar.gz
-            dist/*.zip
+            dist/syncai_*
             syncai.json
           fail_on_unmatched_files: true
         env:

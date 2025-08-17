@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -9,14 +10,25 @@ import (
 	"time"
 
 	"syncai/internal/config"
+	"syncai/internal/selfupdate"
 	"syncai/internal/syncai"
 	"syncai/internal/util"
 )
 
 func main() {
 	var cfgPath string
+	var doSelfUpdate bool
 	flag.StringVar(&cfgPath, "config", "syncai.json", "path to configuration file")
+	flag.BoolVar(&doSelfUpdate, "self-update", false, "update syncai to the latest released version")
 	flag.Parse()
+
+	if doSelfUpdate {
+		if err := selfupdate.Run(); err != nil {
+			log.Fatalf("self-update failed: %v", err)
+		}
+		fmt.Println("syncai updated successfully. Please restart if it was running.")
+		return
+	}
 
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
