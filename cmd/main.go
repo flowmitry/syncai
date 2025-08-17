@@ -20,8 +20,10 @@ func main() {
 	var cfgPath string
 	var doSelfUpdate bool
 	var showVersion bool
+	var noWatch bool
 	flag.StringVar(&cfgPath, "config", "syncai.json", "path to configuration file")
 	flag.BoolVar(&doSelfUpdate, "self-update", false, "update SyncAI to the latest released version")
+	flag.BoolVar(&noWatch, "no-watch", false, "run only the initial sync")
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
 	flag.Parse()
 
@@ -46,6 +48,11 @@ func main() {
 	fmt.Printf("SyncAI %s\nGitHub: https://github.com/flowmitry/syncai/\n\n", version.Version())
 	sync := syncai.New(cfg)
 	initialSync(cfg, sync)
+
+	if noWatch {
+		fmt.Println("SyncAI completed the initial sync")
+		return
+	}
 
 	filesState := buildFilesState(cfg)
 	scan := func() {

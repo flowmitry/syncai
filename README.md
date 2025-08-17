@@ -19,7 +19,7 @@ It watches the files you specify in a JSON configuration and propagates every ch
 ## Quick start
 
 1. Download a suitable binary from the [GitHub Releases](https://github.com/flowmitry/syncai/releases)
-2. Copy [syncai.json](syncai.json) to your project
+2. Copy [syncai.json](syncai.json) to your project and leave configuration for your agents
 3. Launch the binary in the project dir or with an argument `./syncai -config {path_to_syncai.json}`
 
 
@@ -28,11 +28,7 @@ To build SyncAI manually, follow the next steps:
 ```bash
 cd syncai
 
-# Download dependencies
-go mod tidy
-
-# Run with default config path (syncai.json)
-go run .
+make build
 ```
 
 ## Configuration format
@@ -85,3 +81,7 @@ SyncAI implements self-update. Use the following command:
 ```bash
 syncai -self-update
 ```
+
+## How to integrate it with CI
+
+If you want to run the initial sync only (for CI, for example), use `./syncai -no-watch`
