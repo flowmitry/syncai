@@ -130,7 +130,8 @@ jobs:
           mkdir -p "$OUT_DIR"
           EXT=""
           if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
-          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags "-s -w" -o "$OUT_DIR/${BIN_NAME}_${{ matrix.goos }}_${{ matrix.goarch }}$EXT" ./cmd
+          LDFLAGS="-s -w -X syncai/internal/version.version=${{ needs.tag.outputs.tag_name }}"
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags "$LDFLAGS" -o "$OUT_DIR/${BIN_NAME}_${{ matrix.goos }}_${{ matrix.goarch }}$EXT" ./cmd
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"syncai/internal/version"
 	"syscall"
 	"time"
 
@@ -35,6 +36,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
+	fmt.Printf("SyncAI %s\nGitHub: https://github.com/flowmitry/syncai/\n\n", version.Version())
 	sync := syncai.New(cfg)
 	initialSync(cfg, sync)
 
