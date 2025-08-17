@@ -130,7 +130,7 @@ func fetchLatestRelease() (*releaseResponse, error) {
 		return nil, err
 	}
 	// Set UA to avoid 403s
-	req.Header.Set("User-Agent", "syncai-selfupdate")
+	req.Header.Set("User-Agent", "SyncAI")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -153,7 +153,7 @@ func downloadFile(url, path string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "syncai-selfupdate")
+	req.Header.Set("User-Agent", "SyncAI")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err

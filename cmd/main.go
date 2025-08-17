@@ -19,14 +19,14 @@ func main() {
 	var cfgPath string
 	var doSelfUpdate bool
 	flag.StringVar(&cfgPath, "config", "syncai.json", "path to configuration file")
-	flag.BoolVar(&doSelfUpdate, "self-update", false, "update syncai to the latest released version")
+	flag.BoolVar(&doSelfUpdate, "self-update", false, "update SyncAI to the latest released version")
 	flag.Parse()
 
 	if doSelfUpdate {
 		if err := selfupdate.Run(); err != nil {
 			log.Fatalf("self-update failed: %v", err)
 		}
-		fmt.Println("syncai updated successfully. Please restart if it was running.")
+		fmt.Println("SyncAI updated successfully. Restart if it was running.")
 		return
 	}
 
@@ -97,7 +97,7 @@ func main() {
 		case <-ticker.C:
 			scan()
 		case <-sigCh:
-			log.Println("Exiting syncai...")
+			log.Println("Exiting SyncAI...")
 			return
 		}
 	}
