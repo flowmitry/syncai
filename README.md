@@ -1,6 +1,12 @@
-# SyncAI
+<p align="center">
+    <picture>
+        <img src="https://github.com/flowmitry/syncai/raw/main/doc/assets/syncai_github.png" width="194">
+    </picture>
+</p>
 
-`SyncAI` is a lightweight utility that keeps AI-assistant guidelines, rules and ignored files in sync across multiple agents:
+---
+
+**SyncAI** is a lightweight utility that keeps AI-assistant guidelines, rules and ignored files in sync across multiple agents:
 
 * Cursor
 * GitHub Copilot
