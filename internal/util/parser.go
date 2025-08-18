@@ -71,22 +71,16 @@ func ParseFile(path string) (model.Document, error) {
 					for k, v := range m {
 						switch vv := v.(type) {
 						case string:
-							// Skip empty or explicit "<nil>" strings
-							tv := strings.TrimSpace(vv)
-							if tv == "" || strings.EqualFold(tv, "<nil>") {
-								continue
+							if s, ok := cleanYAMLValue(vv); ok {
+								metadata[k] = s
 							}
-							metadata[k] = vv
 						default:
 							if v == nil {
-								// Ignore nil values
 								continue
 							}
-							sv := strings.TrimSpace(fmt.Sprint(v))
-							if sv == "" || strings.EqualFold(sv, "<nil>") {
-								continue
+							if s, ok := cleanYAMLValue(v); ok {
+								metadata[k] = s
 							}
-							metadata[k] = sv
 						}
 					}
 				}
@@ -108,4 +102,12 @@ func ParseFile(path string) (model.Document, error) {
 		Content: body,
 	}
 	return doc, nil
+}
+
+func cleanYAMLValue(value interface{}) (string, bool) {
+	sv := strings.TrimSpace(fmt.Sprint(value))
+	if sv == "" || strings.EqualFold(sv, "<nil>") {
+		return "", false
+	}
+	return sv, true
 }
