@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"syncai/internal/model"
 	"syncai/internal/version"
 	"syscall"
 	"time"
@@ -71,18 +72,18 @@ func main() {
 				hash, _ := util.FileHash(path)
 				newState[path] = hash
 				prev, ok := filesState[path]
+				filesState[path] = hash
 				if !ok || hash != prev {
 					if ok {
 						log.Printf("Detected change in %s (%s), syncing...", path, agent.Name)
 					} else {
 						log.Printf("Detected new file %s (%s), syncing...", path, agent.Name)
 					}
-					files, err := sync.Sync(path)
+					updatedFiles, err := sync.Sync(path)
 					if err != nil {
 						log.Printf("sync error: %v", err)
 					}
-					filesState[path] = hash
-					for _, newPath := range files {
+					for _, newPath := range updatedFiles {
 						filesState[newPath], _ = util.FileHash(newPath)
 					}
 				}
@@ -92,7 +93,7 @@ func main() {
 			if _, ok := newState[path]; !ok {
 				deletedPaths, err := sync.Delete(path)
 				for _, deletedPath := range deletedPaths {
-					log.Printf("Deleted missing file across agents: %s", deletedPath)
+					log.Printf("Deleted file across agents: %s", deletedPath)
 					delete(filesState, deletedPath)
 				}
 				if err != nil {
@@ -122,6 +123,7 @@ func main() {
 
 // Initial sync: pick the newest version among agents for each logical file (by kind+stem) and propagate it
 func initialSync(cfg config.Config, sync *syncai.SyncAI) {
+	log.Println("Initial sync started...")
 	type newest struct {
 		path string
 		mod  time.Time
@@ -138,7 +140,7 @@ func initialSync(cfg config.Config, sync *syncai.SyncAI) {
 			modT := fi.ModTime()
 
 			_, kind, stem := sync.Identify(path)
-			if kind == syncai.KindUnknown {
+			if kind == model.KindUnknown {
 				continue
 			}
 
@@ -154,6 +156,7 @@ func initialSync(cfg config.Config, sync *syncai.SyncAI) {
 			log.Printf("initial sync error for %s: %v", v.path, err)
 		}
 	}
+	log.Println("Initial sync completed.")
 }
 
 func buildFilesState(cfg config.Config) map[string]string {

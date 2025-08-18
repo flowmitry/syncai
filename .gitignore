@@ -5,6 +5,7 @@
 .cursor/
 .junie/
 .clinerules/
+test/
 bin
 .idea
 .DS_Store

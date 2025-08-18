@@ -4,18 +4,19 @@ import (
 	"path/filepath"
 	"strings"
 	"syncai/internal/config"
+	"syncai/internal/model"
 )
 
-func (s *SyncAI) generatePath(agent *config.Agent, kind Kind, stem string) string {
+func (s *SyncAI) generatePath(agent *config.Agent, kind model.Kind, stem string) string {
 	if agent == nil {
 		return ""
 	}
 	switch kind {
-	case KindContext:
+	case model.KindContext:
 		return agent.Context.Path
-	case KindIgnore:
+	case model.KindIgnore:
 		return agent.Ignore.Path
-	case KindRules:
+	case model.KindRules:
 		pattern := strings.TrimSpace(agent.Rules.Pattern)
 		if pattern == "" {
 			return ""

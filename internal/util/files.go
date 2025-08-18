@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 func EnsureDir(dir string) error {
@@ -19,13 +20,63 @@ func EnsureDir(dir string) error {
 	return nil
 }
 
-func WriteIfChanged(path string, data []byte) error {
+// WriteFile writes data to the given path atomically.
+// To avoid unnecessary churn and ping-pong syncs, it becomes a no-op if the
+// file already exists with identical content. It writes to a temp file in the
+// same directory, fsyncs it, then renames over the destination and fsyncs the
+// directory to ensure durability.
+func WriteFile(path string, data []byte) error {
+	// If file exists and content is identical, skip writing
 	if b, err := os.ReadFile(path); err == nil {
 		if bytes.Equal(b, data) {
-			return nil // no change, skip writing
+			return nil
 		}
 	}
-	return os.WriteFile(path, data, 0o644)
+
+	dir := filepath.Dir(path)
+	// Ensure directory exists
+	if err := EnsureDir(dir); err != nil {
+		return err
+	}
+
+	// Create temp file in the same directory for atomic rename
+	tmp, err := os.CreateTemp(dir, ".syncai-*")
+	if err != nil {
+		return fmt.Errorf("create temp file: %w", err)
+	}
+	tmpName := tmp.Name()
+
+	// Ensure cleanup on error
+	defer func() {
+		_ = os.Remove(tmpName)
+	}()
+
+	// Write data and fsync temp file
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("write temp file: %w", err)
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("fsync temp file: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("close temp file: %w", err)
+	}
+	// Ensure consistent file permissions
+	_ = os.Chmod(tmpName, 0o644)
+
+	// Rename atomically over the destination
+	if err := os.Rename(tmpName, path); err != nil {
+		return fmt.Errorf("rename temp file: %w", err)
+	}
+
+	// Fsync the directory to persist the rename on crash-prone filesystems
+	if d, err := os.Open(dir); err == nil {
+		_ = d.Sync()
+		_ = d.Close()
+	}
+	return nil
 }
 
 func FileHash(path string) (string, error) {
@@ -43,16 +94,13 @@ func FileHash(path string) (string, error) {
 	return hex.EncodeToString(sum), nil
 }
 
-func ReadFile(path string) ([]byte, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("open source: %w", err)
+func IsFileExists(path string) bool {
+	if path == "" {
+		return false
 	}
-	defer f.Close()
-	data, err := io.ReadAll(f)
+	info, err := os.Stat(path)
 	if err != nil {
-		return nil, fmt.Errorf("read source: %w", err)
+		return false // file does not exist or error occurred
 	}
-
-	return data, nil
+	return !info.IsDir() // ensure it's a file, not a directory
 }
