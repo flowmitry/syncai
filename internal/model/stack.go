@@ -37,6 +37,9 @@ func (s *DocumentStack) Generate(agent string) ([]byte, error) {
 		return s.Documents[i].FileInfo.ModTime.Before(s.Documents[j].FileInfo.ModTime)
 	})
 
+	if len(s.Documents) == 0 {
+		return nil, fmt.Errorf("no documents in stack")
+	}
 	newestDoc := s.Documents[len(s.Documents)-1]
 	content := newestDoc.Content
 
