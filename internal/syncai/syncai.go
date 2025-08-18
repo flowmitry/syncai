@@ -116,7 +116,6 @@ func (s *SyncAI) Sync(path string) ([]string, error) {
 		result = append(result, dstPath)
 		log.Printf("File %s synced to %s", path, dstPath)
 	}
-	result = append(result, path)
 
 	return result, nil
 }
