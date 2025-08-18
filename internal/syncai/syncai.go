@@ -6,18 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syncai/internal/model"
 	"syncai/internal/util"
 
 	"syncai/internal/config"
-)
-
-type Kind string
-
-const (
-	KindUnknown Kind = ""
-	KindRules   Kind = "rules"
-	KindContext Kind = "context"
-	KindIgnore  Kind = "ignore"
 )
 
 type SyncAI struct {
@@ -33,12 +25,12 @@ func (s *SyncAI) Delete(path string) ([]string, error) {
 	result := make([]string, 0)
 	srcAgent, kind, stem := s.Identify(path)
 	result = append(result, path)
-	if kind == KindUnknown || srcAgent == nil {
+	if kind == model.KindUnknown || srcAgent == nil {
 		return result, nil // nothing to do
 	}
 
 	// Only propagate deletions for rules. Context/ignore deletions are not propagated to avoid accidental removals.
-	if kind != KindRules {
+	if kind != model.KindRules {
 		return result, nil
 	}
 
@@ -70,58 +62,74 @@ func (s *SyncAI) Delete(path string) ([]string, error) {
 func (s *SyncAI) Sync(path string) ([]string, error) {
 	result := make([]string, 0)
 	srcAgent, kind, stem := s.Identify(path)
-	if kind == KindUnknown || srcAgent == nil {
+	if kind == model.KindUnknown || srcAgent == nil {
 		return result, nil // unknown file, ignore
+	}
+
+	stack := model.DocumentStack{
+		Documents:   make([]model.Document, 0),
+		ChangedPath: path,
+		Properties: model.Properties{
+			Kind: kind,
+			Stem: stem,
+		},
+	}
+	for i := range s.cfg.Agents {
+		dstAgent := &s.cfg.Agents[i]
+
+		var docPath string
+		if dstAgent.Name == srcAgent.Name {
+			docPath = path
+		} else {
+			docPath = s.generatePath(dstAgent, kind, stem)
+			if docPath == "" {
+				continue
+			}
+		}
+		if util.IsFileExists(docPath) {
+			doc, err := util.ParseFile(docPath)
+			if err != nil {
+				return result, fmt.Errorf("parse %s for agent %s: %w", docPath, dstAgent.Name, err)
+			}
+			stack.Push(doc)
+		}
 	}
 
 	for i := range s.cfg.Agents {
 		dstAgent := &s.cfg.Agents[i]
-		if dstAgent.Name == srcAgent.Name {
+		if srcAgent.Name == dstAgent.Name {
 			continue
 		}
 
 		dstPath := s.generatePath(dstAgent, kind, stem)
-		if dstPath == "" {
+		if strings.TrimSpace(dstPath) == "" {
+			// No target path configured for this agent/kind; skip writing
 			continue
 		}
-
-		switch kind {
-		case KindRules:
-			err := s.syncRule(srcAgent.Name, path, dstAgent.Name, dstPath)
-			if err != nil {
-				return result, fmt.Errorf("sync rule: %w", err)
-			}
-			result = append(result, dstPath)
-		case KindContext:
-			err := s.syncContext(srcAgent.Name, path, dstAgent.Name, dstPath)
-			if err != nil {
-				return result, fmt.Errorf("sync context: %w", err)
-			}
-			result = append(result, dstPath)
-		case KindIgnore:
-			err := s.syncIgnore(srcAgent.Name, path, dstAgent.Name, dstPath)
-			if err != nil {
-				return result, fmt.Errorf("sync ignore: %w", err)
-			}
-			result = append(result, dstPath)
+		data, err := stack.Generate(dstAgent.Name)
+		if err != nil {
+			return result, fmt.Errorf("generate stack for agent %s: %w", dstAgent.Name, err)
 		}
-
+		if err = util.WriteFile(dstPath, data); err != nil {
+			return result, fmt.Errorf("write %s for agent %s: %w", dstPath, dstAgent.Name, err)
+		}
 		result = append(result, dstPath)
 		log.Printf("File %s synced to %s", path, dstPath)
 	}
+	result = append(result, path)
 
 	return result, nil
 }
 
-func (s *SyncAI) Identify(path string) (*config.Agent, Kind, string) {
+func (s *SyncAI) Identify(path string) (*config.Agent, model.Kind, string) {
 	clean := filepath.Clean(path)
 	for i := range s.cfg.Agents {
 		a := &s.cfg.Agents[i]
 		if filepath.Clean(a.Context.Path) == clean {
-			return a, KindContext, ""
+			return a, model.KindContext, ""
 		}
 		if filepath.Clean(a.Ignore.Path) == clean {
-			return a, KindIgnore, ""
+			return a, model.KindIgnore, ""
 		}
 		if strings.TrimSpace(a.Rules.Pattern) != "" {
 			// Match by comparing the directory and base pattern, independent of file existence
@@ -142,7 +150,7 @@ func (s *SyncAI) Identify(path string) (*config.Agent, Kind, string) {
 					if strings.HasPrefix(filename, prefix) && strings.HasSuffix(filename, suffix) {
 						stem := strings.TrimPrefix(filename, prefix)
 						stem = strings.TrimSuffix(stem, suffix)
-						return a, KindRules, stem
+						return a, model.KindRules, stem
 					}
 				} else {
 					if filename == basePattern {
@@ -150,56 +158,11 @@ func (s *SyncAI) Identify(path string) (*config.Agent, Kind, string) {
 						if ext := filepath.Ext(stem); ext != "" {
 							stem = strings.TrimSuffix(stem, ext)
 						}
-						return a, KindRules, stem
+						return a, model.KindRules, stem
 					}
 				}
 			}
 		}
 	}
-	return nil, KindUnknown, ""
-}
-
-func (s *SyncAI) syncRule(srcAgent, srcPath, dstAgent, dstPath string) error {
-	content, err := util.ReadFile(srcPath)
-	if err != nil {
-		return err
-	}
-	if err := util.EnsureDir(filepath.Dir(dstPath)); err != nil {
-		return err
-	}
-	if err := util.WriteIfChanged(dstPath, content); err != nil {
-		return fmt.Errorf("write %s: %w", dstPath, err)
-	}
-
-	return nil
-}
-
-func (s *SyncAI) syncContext(srcAgent, srcPath, dstAgent, dstPath string) error {
-	content, err := util.ReadFile(srcPath)
-	if err != nil {
-		return err
-	}
-	if err := util.EnsureDir(filepath.Dir(dstPath)); err != nil {
-		return err
-	}
-	if err := util.WriteIfChanged(dstPath, content); err != nil {
-		return fmt.Errorf("write %s: %w", dstPath, err)
-	}
-
-	return nil
-}
-
-func (s *SyncAI) syncIgnore(srcAgent, srcPath, dstAgent, dstPath string) error {
-	content, err := util.ReadFile(srcPath)
-	if err != nil {
-		return err
-	}
-	if err := util.EnsureDir(filepath.Dir(dstPath)); err != nil {
-		return err
-	}
-	if err := util.WriteIfChanged(dstPath, content); err != nil {
-		return fmt.Errorf("write %s: %w", dstPath, err)
-	}
-
-	return nil
+	return nil, model.KindUnknown, ""
 }

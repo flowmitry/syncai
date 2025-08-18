@@ -1,16 +1,44 @@
 package model
 
-import "time"
+import (
+	"time"
+)
+
+type Kind string
+
+const (
+	KindUnknown Kind = ""
+	KindRules   Kind = "rules"
+	KindContext Kind = "context"
+	KindIgnore  Kind = "ignore"
+)
+
+const (
+	AgentCursor  string = "cursor"
+	AgentCopilot string = "copilot"
+)
 
 type FileInfo struct {
-	Path    string    `json:"path"`
-	Size    int64     `json:"size"`
-	ModTime time.Time `json:"modTime"`
-	Hash    string    `json:"hash"`
+	Path    string
+	ModTime time.Time
+}
+
+type DocumentMetadata struct {
+	Raw map[string]string
 }
 
 type Document struct {
 	FileInfo FileInfo
-	Metadata map[string]string
+	Metadata DocumentMetadata
 	Content  []byte
+}
+
+type RulesMetadata struct {
+	Description string
+	Globs       string
+	ExtraFields map[string]string
+}
+
+func (m *RulesMetadata) IsAlwaysApply() bool {
+	return m.Globs == "**" || m.Globs == "*"
 }
