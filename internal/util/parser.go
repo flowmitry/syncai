@@ -105,9 +105,25 @@ func ParseFile(path string) (model.Document, error) {
 }
 
 func cleanYAMLValue(value interface{}) (string, bool) {
-	sv := strings.TrimSpace(fmt.Sprint(value))
-	if sv == "" || strings.EqualFold(sv, "<nil>") {
+	switch v := value.(type) {
+	case string:
+		sv := strings.TrimSpace(v)
+		if sv == "" || strings.EqualFold(sv, "<nil>") {
+			return "", false
+		}
+		return sv, true
+	case bool:
+		return fmt.Sprintf("%t", v), true
+	case int, int8, int16, int32, int64:
+		return fmt.Sprintf("%d", v), true
+	case uint, uint8, uint16, uint32, uint64:
+		return fmt.Sprintf("%d", v), true
+	case float32, float64:
+		return fmt.Sprintf("%v", v), true
+	case nil:
+		return "", false
+	default:
+		// Ignore slices, maps, structs, etc.
 		return "", false
 	}
-	return sv, true
 }
