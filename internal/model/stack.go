@@ -23,7 +23,10 @@ func (s *DocumentStack) Push(d Document) {
 }
 
 func (s *DocumentStack) Generate(agent string) ([]byte, error) {
-	// Sort documents by ModTime
+	// Sort documents by ModTime.
+	// The document with ChangedPath is always considered the "newest" and placed last,
+	// regardless of its actual modification time. This ensures that the changed document
+	// is prioritized for further processing, even if its ModTime is older than others.
 	sort.Slice(s.Documents, func(i, j int) bool {
 		if s.Documents[i].FileInfo.Path == s.ChangedPath {
 			return false
