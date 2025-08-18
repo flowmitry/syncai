@@ -184,7 +184,7 @@ func generate(s *model.DocumentStack, agent string) ([]byte, error) {
 	})
 
 	if len(s.Documents) == 0 {
-		return nil, fmt.Errorf("no documents in stack")
+		return []byte{}, fmt.Errorf("no documents in stack")
 	}
 	newestDoc := s.Documents[len(s.Documents)-1]
 	content := newestDoc.Content

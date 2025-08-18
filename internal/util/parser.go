@@ -69,15 +69,15 @@ func ParseFile(path string) (model.Document, error) {
 				var m map[string]interface{}
 				if err := yaml.Unmarshal(yamlBuf.Bytes(), &m); err == nil {
 					for k, v := range m {
+						if v == nil {
+							continue
+						}
 						switch vv := v.(type) {
 						case string:
 							if s, ok := cleanYAMLValue(vv); ok {
 								metadata[k] = s
 							}
 						default:
-							if v == nil {
-								continue
-							}
 							if s, ok := cleanYAMLValue(v); ok {
 								metadata[k] = s
 							}
