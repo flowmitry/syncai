@@ -90,8 +90,7 @@ func (s *DocumentStack) Generate(agent string) ([]byte, error) {
 			if len(metadata.ExtraFields) > 0 {
 				keys := make([]string, 0, len(metadata.ExtraFields))
 				for k := range metadata.ExtraFields {
-					kl := strings.ToLower(k)
-					if kl == "description" || kl == "globs" || kl == "applyto" || kl == "alwaysapply" {
+					if isReservedField(k) {
 						continue
 					}
 					keys = append(keys, k)
@@ -120,8 +119,7 @@ func (s *DocumentStack) Generate(agent string) ([]byte, error) {
 			if len(metadata.ExtraFields) > 0 {
 				keys := make([]string, 0, len(metadata.ExtraFields))
 				for k := range metadata.ExtraFields {
-					kl := strings.ToLower(k)
-					if kl == "description" || kl == "globs" || kl == "applyto" || kl == "alwaysapply" {
+					if isReservedField(k) {
 						continue
 					}
 					keys = append(keys, k)
@@ -145,4 +143,9 @@ func (s *DocumentStack) Generate(agent string) ([]byte, error) {
 
 	// Return content of newest file
 	return content, nil
+}
+
+func isReservedField(field string) bool {
+	fl := strings.ToLower(field)
+	return fl == "description" || fl == "globs" || fl == "applyto" || fl == "alwaysapply"
 }
