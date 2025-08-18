@@ -36,7 +36,7 @@ type Agent struct {
 
 type Meta struct {
 	Interval   int    `json:"interval"`
-	WorkingDir string `json:"workingDir"`
+	WorkingDir string `json:"workdir"`
 }
 
 type Config struct {
