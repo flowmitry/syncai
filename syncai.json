@@ -1,6 +1,7 @@
 {
   "config": {
-    "interval": 5
+    "interval": 5,
+    "workingDir": ""
   },
   "agents": [
     {
