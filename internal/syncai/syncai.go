@@ -5,7 +5,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"syncai/internal/generator"
 	"syncai/internal/model"
 	"syncai/internal/util"
 
@@ -106,7 +108,7 @@ func (s *SyncAI) Sync(path string) ([]string, error) {
 			// No target path configured for this agent/kind; skip writing
 			continue
 		}
-		data, err := stack.Generate(dstAgent.Name)
+		data, err := generate(&stack, dstAgent.Name)
 		if err != nil {
 			return result, fmt.Errorf("generate stack for agent %s: %w", dstAgent.Name, err)
 		}
@@ -164,4 +166,37 @@ func (s *SyncAI) Identify(path string) (*config.Agent, model.Kind, string) {
 		}
 	}
 	return nil, model.KindUnknown, ""
+}
+
+func generate(s *model.DocumentStack, agent string) ([]byte, error) {
+	// Sort documents by ModTime.
+	// The document with ChangedPath is always considered the "newest" and placed last,
+	// regardless of its actual modification time. This ensures that the changed document
+	// is prioritized for further processing, even if its ModTime is older than others.
+	sort.Slice(s.Documents, func(i, j int) bool {
+		if s.Documents[i].FileInfo.Path == s.ChangedPath {
+			return false
+		}
+		if s.Documents[j].FileInfo.Path == s.ChangedPath {
+			return true
+		}
+		return s.Documents[i].FileInfo.ModTime.Before(s.Documents[j].FileInfo.ModTime)
+	})
+
+	if len(s.Documents) == 0 {
+		return nil, fmt.Errorf("no documents in stack")
+	}
+	newestDoc := s.Documents[len(s.Documents)-1]
+	content := newestDoc.Content
+	agentName := strings.ToLower(agent)
+
+	if s.Properties.Kind == model.KindRules {
+		if gen := generator.GetRulesGenerator(agentName); gen != nil {
+			metadata := generator.ExtractRulesMetadata(s)
+			content = gen.GenerateRules(metadata, content)
+		}
+	}
+
+	// Return content of newest file
+	return content, nil
 }
