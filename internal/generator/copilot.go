@@ -17,7 +17,11 @@ func (g CopilotRulesGenerator) GenerateRules(metadata model.RulesMetadata, conte
 	sb.WriteString(strconv.Quote(metadata.Description))
 	sb.WriteString("\n")
 	sb.WriteString("applyTo: ")
-	sb.WriteString(strconv.Quote(metadata.Globs))
+	if metadata.Globs == "" {
+		sb.WriteString(strconv.Quote("**"))
+	} else {
+		sb.WriteString(strconv.Quote(metadata.Globs))
+	}
 	sb.WriteString("\n")
 	if len(metadata.ExtraFields) > 0 {
 		keys := make([]string, 0, len(metadata.ExtraFields))
