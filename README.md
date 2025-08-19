@@ -6,7 +6,7 @@
 
 ---
 
-**SyncAI** is a lightweight utility that keeps AI-assistant guidelines, rules and ignored files in sync across multiple
+**SyncAI** is a lightweight and cross-platform utility that keeps AI-assistant guidelines, rules and ignored files in sync across multiple
 agents:
 
 * Cursor
@@ -79,13 +79,6 @@ The copying logic is intentionally simple and conservative:
   replaced with the source file’s base name.
 * Destination directories are created as needed.
 
-## How to update
-
-SyncAI implements self-update. Use the following command:
-
-```bash
-syncai -self-update
-```
 
 ## How to build
 
