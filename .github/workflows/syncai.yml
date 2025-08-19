@@ -39,7 +39,7 @@ jobs:
 
       - name: Cache syncai binary
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/syncai-cache
           key: syncai-binary-${{ runner.os }}-${{ steps.get_latest.outputs.result }}
@@ -67,7 +67,7 @@ jobs:
           NAME="syncai_${OS}_${ARCH}"
           echo "Looking for asset: $NAME"
           # Fetch download URL matching exact asset name
-          ASSET_URL=$(curl -s https://api.github.com/repos/flowmitry/syncai/releases/latest | jq -r ".assets[] | select(.name==\"$NAME\") | .browser_download_url")
+          ASSET_URL=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/flowmitry/syncai/releases/latest | jq -r ".assets[] | select(.name==\"$NAME\") | .browser_download_url")
           if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
             echo "Error: Could not find asset $NAME in latest release"
             exit 1
@@ -79,7 +79,12 @@ jobs:
       - name: Run syncai
         run: |
           BINARY_PATH="${{ runner.temp }}/syncai-cache/syncai"
-          "$BINARY_PATH" --no-watch --config "${{ github.workspace }}/syncai.json"
+          CONFIG_PATH="${{ github.workspace }}/syncai.json"
+          if [ ! -f "$CONFIG_PATH" ]; then
+            echo "Error: Configuration file $CONFIG_PATH not found."
+            exit 1
+          fi
+          "$BINARY_PATH" --no-watch --config "$CONFIG_PATH"
 
       - name: Commit changes if any
         run: |
