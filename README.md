@@ -22,17 +22,18 @@ the other agents.
 
 1. Download a suitable binary from the [GitHub Releases](https://github.com/flowmitry/syncai/releases)
 2. Copy [syncai.json](syncai.json) to your project and leave configuration for your agents
-3. Launch the binary in the project dir or with an argument `./syncai -config {path_to_syncai.json}`
+3. Launch the binary in the project dir `./syncai`
 
-To build SyncAI manually, follow the next steps:
+## Configuration
 
-```bash
-cd syncai
+### Launching with arguments
 
-make build
-```
+1. Use `./syncai -config {path_to_syncai.json}` to start SyncAI with your custom configuration file.
+2. Use `./syncai -workdir {path_to_working_directory}` to specify a different working directory.
+3. Use `./syncai -no-watch` to sync your files only once, without watching for changes  (useful for CI).
+4. Use `./syncai -self-update` to update SyncAI to the latest version.
 
-## Configuration format
+### Configuration File
 
 The default configuration is a simple JSON map (for more details check [syncai.json](syncai.json)):
 
@@ -40,7 +41,9 @@ The default configuration is a simple JSON map (for more details check [syncai.j
 {
   "config": {
     // sync interval in seconds
-    "interval": 5
+    "interval": 5,
+    // working directory (optional, default is current directory)
+    "workdir": ""
   },
   "agents": [
     {
@@ -84,6 +87,12 @@ SyncAI implements self-update. Use the following command:
 syncai -self-update
 ```
 
-## How to integrate it with CI
+## How to build
 
-If you want to run the initial sync only (for CI, for example), use `./syncai -no-watch`
+To build SyncAI manually, follow the next steps:
+
+```bash
+cd syncai
+
+make build
+```

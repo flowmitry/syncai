@@ -22,11 +22,35 @@ func main() {
 	var doSelfUpdate bool
 	var showVersion bool
 	var noWatch bool
+	var workingDir string
+	var help bool
 	flag.StringVar(&cfgPath, "config", "syncai.json", "path to configuration file")
+	flag.StringVar(&workingDir, "workdir", "", "base working directory for relative paths (overrides config)")
 	flag.BoolVar(&doSelfUpdate, "self-update", false, "update SyncAI to the latest released version")
 	flag.BoolVar(&noWatch, "no-watch", false, "run only the initial sync")
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
+	flag.BoolVar(&help, "help", false, "show available commands and their descriptions")
 	flag.Parse()
+
+	if help {
+		fmt.Println("SyncAI - a lightweight utility that keeps AI-assistant guidelines, rules and ignored files in sync across multiple agents:\n")
+		fmt.Println("GitHub: https://github.com/flowmitry/syncai/")
+		fmt.Println("Version: ", version.Version(), "\n")
+		fmt.Println("Available commands:")
+		fmt.Println("  -config string")
+		fmt.Println("        path to configuration file (default \"syncai.json\")")
+		fmt.Println("  -workdir string")
+		fmt.Println("        base working directory for relative paths (overrides config)")
+		fmt.Println("  -self-update")
+		fmt.Println("        update SyncAI to the latest released version")
+		fmt.Println("  -no-watch")
+		fmt.Println("        run only the initial sync")
+		fmt.Println("  -version")
+		fmt.Println("        print version and exit")
+		fmt.Println("  -help")
+		fmt.Println("        show available commands and their descriptions")
+		return
+	}
 
 	if showVersion {
 		fmt.Println(version.Version())
@@ -41,12 +65,19 @@ func main() {
 		return
 	}
 
-	cfg, err := config.Load(cfgPath)
+	cfg, err := config.Load(cfgPath, workingDir)
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
 	fmt.Printf("SyncAI %s\nGitHub: https://github.com/flowmitry/syncai/\n\n", version.Version())
+	fmt.Println("Config path: <", cfgPath, ">")
+	err = os.Chdir(cfg.WorkingDir())
+	if err != nil {
+		log.Fatalf("failed to chdir to %q: %v", cfg.WorkingDir(), err)
+	}
+	fmt.Println("Base path: <", cfg.WorkingDir(), ">")
+
 	sync := syncai.New(cfg)
 	initialSync(cfg, sync)
 
@@ -55,6 +86,7 @@ func main() {
 		return
 	}
 
+	fmt.Println("Start watching for file changes...")
 	filesState := buildFilesState(cfg)
 	scan := func() {
 		newState := make(map[string]string)

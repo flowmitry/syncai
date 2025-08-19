@@ -35,7 +35,8 @@ type Agent struct {
 }
 
 type Meta struct {
-	Interval int `json:"interval"`
+	Interval   int    `json:"interval"`
+	WorkingDir string `json:"workdir"`
 }
 
 type Config struct {
@@ -43,8 +44,19 @@ type Config struct {
 	Agents []Agent `json:"agents"`
 }
 
-func Load(path string) (Config, error) {
-	f, err := os.Open(path)
+func (c Config) Interval() time.Duration {
+	if c.Meta.Interval == 0 {
+		return 5 * time.Second
+	}
+	return time.Duration(c.Meta.Interval) * time.Second
+}
+
+func (c Config) WorkingDir() string {
+	return strings.TrimSuffix(c.Meta.WorkingDir, "/")
+}
+
+func Load(configPath, basePath string) (Config, error) {
+	f, err := os.Open(configPath)
 	if err != nil {
 		return Config{}, fmt.Errorf("open config: %w", err)
 	}
@@ -59,12 +71,35 @@ func Load(path string) (Config, error) {
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}
+	if strings.TrimSpace(basePath) != "" {
+		cfg.Meta.WorkingDir = strings.TrimSpace(basePath)
+	} else {
+		if strings.TrimSpace(cfg.Meta.WorkingDir) == "" {
+			cfg.Meta.WorkingDir = strings.TrimSpace(filepath.Dir(configPath))
+		}
+	}
+
+	if err := validateWorkingDir(cfg.Meta.WorkingDir); err != nil {
+		return Config{}, fmt.Errorf("working directory error: %w", err)
+	}
 
 	if len(cfg.Agents) == 0 {
 		return Config{}, fmt.Errorf("config has no agents defined")
 	}
 
 	return cfg, nil
+}
+
+func validateWorkingDir(basePath string) error {
+	path := strings.TrimSuffix(basePath, "/")
+	if info, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("working dir %s does not exist: %w", path, err)
+		}
+	} else if !info.IsDir() {
+		return fmt.Errorf("working dir %s is not a directory", path)
+	}
+	return nil
 }
 
 func (a Agent) Files() []string {
@@ -98,17 +133,10 @@ func (a Agent) Files() []string {
 					log.Printf("file error %s: %v", path, err)
 					continue
 				}
-				files = append(files, match)
+				files = append(files, path)
 			}
 		}
 	}
 
 	return files
-}
-
-func (c Config) Interval() time.Duration {
-	if c.Meta.Interval == 0 {
-		return 5 * time.Second
-	}
-	return time.Duration(c.Meta.Interval) * time.Second
 }
