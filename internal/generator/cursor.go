@@ -18,7 +18,7 @@ func (g CursorRulesGenerator) GenerateRules(metadata model.RulesMetadata, conten
 	sb.WriteString("\n")
 	sb.WriteString(fmt.Sprintf("alwaysApply: %t\n", metadata.IsAlwaysApply()))
 	sb.WriteString("globs: ")
-	sb.WriteString(strconv.Quote(metadata.Globs))
+	sb.WriteString(metadata.Globs)
 	sb.WriteString("\n")
 	// Extra fields
 	if len(metadata.ExtraFields) > 0 {
