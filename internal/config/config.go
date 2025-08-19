@@ -40,9 +40,8 @@ type Meta struct {
 }
 
 type Config struct {
-	Meta       Meta    `json:"config"`
-	Agents     []Agent `json:"agents"`
-	configPath string
+	Meta   Meta    `json:"config"`
+	Agents []Agent `json:"agents"`
 }
 
 func (c Config) Interval() time.Duration {
@@ -53,7 +52,7 @@ func (c Config) Interval() time.Duration {
 }
 
 func (c Config) WorkingDir() string {
-	return strings.TrimSuffix(c.configPath, "/")
+	return strings.TrimSuffix(c.Meta.WorkingDir, "/")
 }
 
 func Load(configPath, basePath string) (Config, error) {
@@ -73,17 +72,15 @@ func Load(configPath, basePath string) (Config, error) {
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}
 	if strings.TrimSpace(basePath) != "" {
-		cfg.configPath = strings.TrimSpace(basePath)
+		cfg.Meta.WorkingDir = strings.TrimSpace(basePath)
 	} else {
-		if strings.TrimSpace(cfg.Meta.WorkingDir) != "" {
-			cfg.configPath = strings.TrimSpace(cfg.Meta.WorkingDir)
-		} else {
-			cfg.configPath = strings.TrimSpace(filepath.Dir(configPath))
+		if strings.TrimSpace(cfg.Meta.WorkingDir) == "" {
+			cfg.Meta.WorkingDir = strings.TrimSpace(filepath.Dir(configPath))
 		}
 	}
 
-	if err := validateBasePath(cfg.configPath); err != nil {
-		return Config{}, fmt.Errorf("base configPath error: %w", err)
+	if err := validateWorkingDir(cfg.Meta.WorkingDir); err != nil {
+		return Config{}, fmt.Errorf("working directory error: %w", err)
 	}
 
 	if len(cfg.Agents) == 0 {
@@ -93,7 +90,7 @@ func Load(configPath, basePath string) (Config, error) {
 	return cfg, nil
 }
 
-func validateBasePath(basePath string) error {
+func validateWorkingDir(basePath string) error {
 	path := strings.TrimSuffix(basePath, "/")
 	if info, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
