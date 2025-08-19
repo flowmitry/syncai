@@ -20,9 +20,9 @@ the other agents.
 
 ## Quick start
 
-1. Download a suitable binary from the [GitHub Releases](https://github.com/flowmitry/syncai/releases)
-2. Copy [syncai.json](syncai.json) to your project and leave configuration for your agents
-3. Launch the binary in the project dir `./syncai`
+1. Download a suitable binary from the [GitHub Releases](https://github.com/flowmitry/syncai/releases).
+2. Copy [syncai.json](syncai.json) to your project and adjust the configuration for your agents.
+3. Launch the binary in the project dir `./syncai`.
 
 ## Configuration
 
