@@ -17,7 +17,7 @@ func quoteIfNeeded(s string) string {
 	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
 		return s
 	}
-	if strings.ContainsAny(s, " \":{}[]#&*!|>'%@`") {
+	if strings.ContainsAny(s, yamlSpecialChars) {
 		return strconv.Quote(s)
 	}
 	return s
