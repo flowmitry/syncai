@@ -106,7 +106,10 @@ func ParseFile(path string) (model.Document, error) {
 							continue
 						}
 						key := strings.TrimSpace(parts[0])
-						val := strings.TrimSpace(parts[1])
+						key, val, ok := splitKeyValue(line)
+						if !ok {
+							continue
+						}
 						metadata[key] = val
 					}
 				}
