@@ -66,8 +66,9 @@ func ParseFile(path string) (model.Document, error) {
 			}
 
 			if foundEnd && yamlBuf.Len() > 0 {
+				raw := yamlBuf.Bytes()
 				var m map[string]interface{}
-				if err := yaml.Unmarshal(yamlBuf.Bytes(), &m); err == nil {
+				if err := yaml.Unmarshal(raw, &m); err == nil {
 					for k, v := range m {
 						if v == nil {
 							continue
@@ -77,11 +78,36 @@ func ParseFile(path string) (model.Document, error) {
 							if s, ok := cleanYAMLValue(vv); ok {
 								metadata[k] = s
 							}
+						case []interface{}:
+							// join sequence values into comma-separated metadata value
+							var parts []string
+							for _, item := range vv {
+								if s, ok := cleanYAMLValue(item); ok {
+									parts = append(parts, s)
+								}
+							}
+							if len(parts) > 0 {
+								metadata[k] = strings.Join(parts, ",")
+							}
 						default:
 							if s, ok := cleanYAMLValue(v); ok {
 								metadata[k] = s
 							}
 						}
+					}
+				} else {
+					for _, line := range strings.Split(string(raw), "\n") {
+						line = strings.TrimSpace(line)
+						if line == "" {
+							continue
+						}
+						parts := strings.SplitN(line, ":", 2)
+						if len(parts) != 2 {
+							continue
+						}
+						key := strings.TrimSpace(parts[0])
+						val := strings.TrimSpace(parts[1])
+						metadata[key] = val
 					}
 				}
 			} else {
