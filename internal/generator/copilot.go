@@ -2,7 +2,6 @@ package generator
 
 import (
 	"sort"
-	"strconv"
 	"strings"
 	"syncai/internal/model"
 )
@@ -12,15 +11,14 @@ type CopilotRulesGenerator struct{}
 func (g CopilotRulesGenerator) GenerateRules(metadata model.RulesMetadata, content []byte) []byte {
 	var sb strings.Builder
 	sb.WriteString("---\n")
-	// Copilot uses applyTo, but also include description for preservation
 	sb.WriteString("description: ")
-	sb.WriteString(strconv.Quote(metadata.Description))
+	sb.WriteString(quoteIfNeeded(metadata.Description))
 	sb.WriteString("\n")
 	sb.WriteString("applyTo: ")
 	if metadata.Globs == "" {
-		sb.WriteString(strconv.Quote("**"))
+		sb.WriteString(quoteIfNeeded("**"))
 	} else {
-		sb.WriteString(strconv.Quote(metadata.Globs))
+		sb.WriteString(quoteIfNeeded(metadata.Globs))
 	}
 	sb.WriteString("\n")
 	if len(metadata.ExtraFields) > 0 {
@@ -35,7 +33,7 @@ func (g CopilotRulesGenerator) GenerateRules(metadata model.RulesMetadata, conte
 		for _, k := range keys {
 			sb.WriteString(k)
 			sb.WriteString(": ")
-			sb.WriteString(strconv.Quote(metadata.ExtraFields[k]))
+			sb.WriteString(quoteIfNeeded(metadata.ExtraFields[k]))
 			sb.WriteString("\n")
 		}
 	}

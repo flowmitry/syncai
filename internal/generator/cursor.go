@@ -3,7 +3,6 @@ package generator
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"syncai/internal/model"
 )
@@ -14,7 +13,7 @@ func (g CursorRulesGenerator) GenerateRules(metadata model.RulesMetadata, conten
 	var sb strings.Builder
 	sb.WriteString("---\n")
 	sb.WriteString("description: ")
-	sb.WriteString(strconv.Quote(metadata.Description))
+	sb.WriteString(quoteIfNeeded(metadata.Description))
 	sb.WriteString("\n")
 	sb.WriteString(fmt.Sprintf("alwaysApply: %t\n", metadata.IsAlwaysApply()))
 	sb.WriteString("globs: ")
@@ -33,7 +32,7 @@ func (g CursorRulesGenerator) GenerateRules(metadata model.RulesMetadata, conten
 		for _, k := range keys {
 			sb.WriteString(k)
 			sb.WriteString(": ")
-			sb.WriteString(strconv.Quote(metadata.ExtraFields[k]))
+			sb.WriteString(quoteIfNeeded(metadata.ExtraFields[k]))
 			sb.WriteString("\n")
 		}
 	}
