@@ -22,7 +22,7 @@
         "pattern": ".github/instructions/*.instruction.md"
       },
       "context": {
-        "path": ".github/guidelines.md"
+        "path": ".github/copilot-instructions.md"
       }
     },
     {
@@ -44,6 +44,12 @@
       },
       "ignore": {
         "path": ".aiignore"
+      }
+    },
+    {
+      "name": "codex",
+      "context": {
+        "path": "AGENTS.md"
       }
     }
   ]
