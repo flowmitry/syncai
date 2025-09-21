@@ -14,9 +14,23 @@ agents:
 * JetBrains Junie
 * Cline
 * Claude Code
+* OpenAI Codex
 
 It watches the files you specify in a JSON configuration and propagates every change to the corresponding locations for
 the other agents.
+
+
+## Supported sync types
+
+SyncAI supports three kinds of synced items in agent configurations:
+
+- **context** — a single file with general AI guidelines or assistant context (for example `AGENTS.md` or `CLAUDE.md`). Configure with `context.path`. The file is copied verbatim to the target location.
+
+- **rules** — a pattern that matches multiple rule files (for example Cursor rules or Copilot instructions). Configure with `rules.pattern`. If the pattern contains a `*` wildcard, the wildcard is replaced with the source file's base name when copying.
+
+- **ignore** — a single file with instructions telling the assistant what to ignore (for example `.copilotignore`). Configure with `ignore.path`. The file is copied verbatim.
+
+These sections can be used together for each agent to keep context, many rule files, and ignore files in sync across different assistants.
 
 ## Quick start
 
