@@ -7,10 +7,11 @@ import (
 type Kind string
 
 const (
-	KindUnknown Kind = ""
-	KindRules   Kind = "rules"
-	KindContext Kind = "context"
-	KindIgnore  Kind = "ignore"
+	KindUnknown  Kind = ""
+	KindRules    Kind = "rules"
+	KindCommands Kind = "commands"
+	KindContext  Kind = "context"
+	KindIgnore   Kind = "ignore"
 )
 
 const (

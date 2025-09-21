@@ -9,6 +9,9 @@
       "rules": {
         "pattern": ".cursor/rules/*.mdc"
       },
+      "commands": {
+        "pattern": ".cursor/commands/*.cmd"
+      },
       "context": {
         "path": ".cursorrules"
       },
@@ -20,6 +23,9 @@
       "name": "copilot",
       "rules": {
         "pattern": ".github/instructions/*.instruction.md"
+      },
+      "commands": {
+        "pattern": ".github/commands/*.command.md"
       },
       "context": {
         "path": ".github/copilot-instructions.md"

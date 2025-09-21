@@ -15,6 +15,10 @@ type Rules struct {
 	Pattern string `json:"pattern"`
 }
 
+type Commands struct {
+	Pattern string `json:"pattern"`
+}
+
 type Context struct {
 	Path string `json:"path"`
 }
@@ -28,10 +32,11 @@ type Ignore struct {
 }
 
 type Agent struct {
-	Name    string  `json:"name"`
-	Rules   Rules   `json:"rules"`
-	Context Context `json:"context"`
-	Ignore  Ignore  `json:"ignore"`
+	Name     string   `json:"name"`
+	Rules    Rules    `json:"rules"`
+	Commands Commands `json:"commands"`
+	Context  Context  `json:"context"`
+	Ignore   Ignore   `json:"ignore"`
 }
 
 type Meta struct {
@@ -117,6 +122,29 @@ func (a Agent) Files() []string {
 
 	// Include rules only if a non-empty pattern is configured
 	if pat := strings.TrimSpace(a.Rules.Pattern); pat != "" {
+		matches, err := filepath.Glob(pat)
+		if err != nil {
+			log.Printf("glob %s: %v", pat, err)
+		}
+		for _, match := range matches {
+			path := strings.TrimSpace(match)
+			if path != "" {
+				_, err := os.Stat(path)
+				if err != nil {
+					if os.IsNotExist(err) {
+						// File may not exist yet; silently ignore
+						continue
+					}
+					log.Printf("file error %s: %v", path, err)
+					continue
+				}
+				files = append(files, path)
+			}
+		}
+	}
+
+	// Include commands only if a non-empty pattern is configured
+	if pat := strings.TrimSpace(a.Commands.Pattern); pat != "" {
 		matches, err := filepath.Glob(pat)
 		if err != nil {
 			log.Printf("glob %s: %v", pat, err)

@@ -36,6 +36,26 @@ func (s *SyncAI) generatePath(agent *config.Agent, kind model.Kind, stem string)
 			}
 		}
 		return filepath.Join(dir, filename)
+	case model.KindCommands:
+		pattern := strings.TrimSpace(agent.Commands.Pattern)
+		if pattern == "" {
+			return ""
+		}
+		dir := filepath.Dir(pattern)
+		base := filepath.Base(pattern)
+		var filename string
+		if strings.Contains(base, "*") {
+			filename = strings.ReplaceAll(base, "*", stem)
+		} else {
+			// No wildcard in base, just use stem with the same extension as the pattern base
+			ext := filepath.Ext(base)
+			if ext == "" {
+				filename = stem
+			} else {
+				filename = stem + ext
+			}
+		}
+		return filepath.Join(dir, filename)
 	default:
 		return ""
 	}

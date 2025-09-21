@@ -31,8 +31,8 @@ func (s *SyncAI) Delete(path string) ([]string, error) {
 		return result, nil // nothing to do
 	}
 
-	// Only propagate deletions for rules. Context/ignore deletions are not propagated to avoid accidental removals.
-	if kind != model.KindRules {
+	// Only propagate deletions for rules and commands. Context/ignore deletions are not propagated to avoid accidental removals.
+	if kind != model.KindRules && kind != model.KindCommands {
 		return result, nil
 	}
 
@@ -160,6 +160,38 @@ func (s *SyncAI) Identify(path string) (*config.Agent, model.Kind, string) {
 							stem = strings.TrimSuffix(stem, ext)
 						}
 						return a, model.KindRules, stem
+					}
+				}
+			}
+		}
+		if strings.TrimSpace(a.Commands.Pattern) != "" {
+			// Match by comparing the directory and base pattern, independent of file existence
+			pattern := a.Commands.Pattern
+			patDir := filepath.Clean(filepath.Dir(pattern))
+			fileDir := filepath.Clean(filepath.Dir(clean))
+			if patDir == fileDir {
+				basePattern := filepath.Base(pattern)
+				filename := filepath.Base(clean)
+				// Attempt to extract stem depending on wildcard presence
+				if strings.Contains(basePattern, "*") {
+					parts := strings.Split(basePattern, "*")
+					prefix := parts[0]
+					suffix := ""
+					if len(parts) > 1 {
+						suffix = parts[len(parts)-1]
+					}
+					if strings.HasPrefix(filename, prefix) && strings.HasSuffix(filename, suffix) {
+						stem := strings.TrimPrefix(filename, prefix)
+						stem = strings.TrimSuffix(stem, suffix)
+						return a, model.KindCommands, stem
+					}
+				} else {
+					if filename == basePattern {
+						stem := filename
+						if ext := filepath.Ext(stem); ext != "" {
+							stem = strings.TrimSuffix(stem, ext)
+						}
+						return a, model.KindCommands, stem
 					}
 				}
 			}
